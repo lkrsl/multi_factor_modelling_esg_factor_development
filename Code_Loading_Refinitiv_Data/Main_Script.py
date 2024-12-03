@@ -28,12 +28,16 @@ data_request = {
 constituents = getMultipleIndicesConstituents(data_request)
 constituents.to_csv("Output_Data/constituents.csv", index = False, sep = ",")
 
+constituents = pd.read_csv("Output_Data/constituents.csv")
 ##################################### (III) Load Time Series Data #####################################
 
-
-monthly_data_fields = [
+monthly_data_fields_1 = [
     "TR.TotalReturn",
-    "TR.CompanyMarketCap"
+    "TR.CompanyMarketCap",
+]
+
+monthly_data_fields_2 = [
+    "TR.TRESGScore"
 ]
 
 #   Interval can be any of these:
@@ -47,32 +51,56 @@ monthly_data_fields = [
 #   IMPORTANT: Retrieving intraday data (hourly, minutes, etc.) is not supported in this script! 
 #
 
-monthly_time_series_data = getIndexTimeSeries(index_data = constituents, 
+monthly_return_data = getIndexTimeSeries(index_data = constituents, 
                                             index = ["0#.SPX", "0#.SP400", "0#.SPCY"], 
-                                            fields = monthly_data_fields, 
+                                            fields = monthly_data_fields_1, 
                                             start_date = "2009-01-01", 
                                             end_date = "2024-10-31", 
                                             frequency = "monthly", 
-                                            dataset_prefix = "monthly_time_series_data",
+                                            dataset_prefix = "monthly_return_data",
+                                            sleep_time = 2, 
+                                            message_interval = 0.05,
+                                            saving_interval = 0.01)
+
+monthly_esg_data = getIndexTimeSeries(index_data = constituents, 
+                                            index = ["0#.SPX", "0#.SP400", "0#.SPCY"], 
+                                            fields = monthly_data_fields_2, 
+                                            start_date = "2009-01-01", 
+                                            end_date = "2024-10-31", 
+                                            frequency = "monthly", 
+                                            dataset_prefix = "monthly_esg_data",
                                             sleep_time = 2, 
                                             message_interval = 0.05,
                                             saving_interval = 0.01)
 
 ##################################### (IV) Exporting XLSX Files #####################################
 
-value_column_dictionary = {
+return_value_column = {
         "Total Return": "ReturnTotal",
-        "Company Market Cap": "MCAP"
+        "Company Market Cap": "MCAP",
+}
+
+esg_value_column = {
+        "ESG Score": "ESG"
 }
 
 
+#Exporting Return Data
 
-monthly_time_series_data["Date"] = pd.to_datetime(monthly_time_series_data["Date"])
-monthly_time_series_data["Date"] = (monthly_time_series_data["Date"] + pd.offsets.MonthEnd(0)).dt.strftime('%Y-%m-%d')
+monthly_return_data["Date"] = pd.to_datetime(monthly_return_data["Date"])
+monthly_return_data["Date"] = (monthly_return_data["Date"] + pd.offsets.MonthEnd(0)).dt.strftime('%Y-%m-%d')
 
-exportTimeSeriesDataAsXLSX(time_series_data = monthly_time_series_data, 
-                           value_column_dictionary = value_column_dictionary, 
-                           output_file_name = "Output_Data/Stock_Data_Wide_Format")
+exportTimeSeriesDataAsXLSX(time_series_data = monthly_return_data, 
+                           value_column_dictionary = return_value_column, 
+                           output_file_name = "Output_Data/Stock_Return_Data_Wide_Format")
+
+#Exporting ESG Data
+monthly_esg_data["Date"] = pd.to_datetime(monthly_esg_data["Date"])
+monthly_esg_data["Date"] = (monthly_esg_data["Date"] + pd.offsets.MonthEnd(0)).dt.strftime('%Y-%m-%d')
+
+exportTimeSeriesDataAsXLSX(time_series_data = monthly_esg_data, 
+                           value_column_dictionary = esg_value_column, 
+                           output_file_name = "Output_Data/Stock_ESG_Data_Wide_Format")
 
 ##################################### (I) Close Refinitiv Connection #####################################
 
