@@ -1,2 +1,1 @@
-# advanced_topics_in_asset_management
 Data analysis
